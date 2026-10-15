@@ -4,6 +4,7 @@ import dotenv from 'dotenv'
 import dns from 'dns'
 import cookieParser from 'cookie-parser'
 import cors from 'cors'
+import { MongoMemoryServer } from 'mongodb-memory-server'
 import customerRoutes from './routes/customer.route.js'
 import productRoutes from './routes/product.route.js'
 import wishlistRoutes from './routes/wishlist.route.js'
@@ -33,11 +34,16 @@ app.get("/",(req,res)=>{
 
 const startServer = async () => {
     try {
-        if (!process.env.MongoDB_URI) {
-            throw new Error('MongoDB_URI is not configured')
+        let mongoUri = process.env.MongoDB_URI
+
+        if (!mongoUri) {
+            const memoryServer = await MongoMemoryServer.create()
+            mongoUri = memoryServer.getUri()
+            process.env.MongoDB_URI = mongoUri
+            console.log('MongoDB_URI not configured, using in-memory MongoDB')
         }
 
-        await mongoose.connect(process.env.MongoDB_URI)
+        await mongoose.connect(mongoUri)
         console.log('Db Connected')
 
         app.listen(Port, () => {
